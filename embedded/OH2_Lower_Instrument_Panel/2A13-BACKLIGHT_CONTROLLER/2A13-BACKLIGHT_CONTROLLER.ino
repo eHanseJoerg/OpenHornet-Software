@@ -32,8 +32,8 @@
 /**
  * @file    2A13-BACKLIGHT_CONTROLLER.ino
  * @author  Ulukaii, Arribe, Higgins
- * @date    May 22, 2025
- * @version V 0.3.2 ( partially tested)
+ * @date    August 03, 2025
+ * @version V 0.4.5 (tested)
  * @warning This sketch is based on OH-Interconnect. Adapt it to your actual wiring and 
  *          panel versions.
  * @brief   Controls backlights & most annunciators. 
@@ -62,27 +62,58 @@
  *          | 2   | J12 & J13 Cooling fan headers |                  |
  *   
  *          **How to use**
- *          If you are building according to spec, you only need to work with this file:
- *          - In the setup() function, add only those panels that you are using.
- *          - When adding, adjust the panel order according to your physical connections.
- *          - Make sure that the pins defined below match your physical wiring.
- *          - There is no need to adapt any indexes or LED counts, anyhwere.
- *          If you want to change the colors:
- *          - Open the Colors.h file and change the color definitions.
- *          - Adapt individually as needed for your build and LEDs in use.
- *          - Colors according MIL-STD-3099 are documented in the Colors.h file.
- *          - Note: LEDs dimming uses FastLED's nscale8_video() function. It provides a
- *            more color-preserving dimming effect than pure RGB value recalculation.
- *          If you have an non-standard wiring / pinout of your backlight controller:
- *          - Adapt the pinout in the "Define pinouts and channels" section in this file.
- *          If you are using custom panels: 
- *          - Adapt or create a new panel class in the "panels" folder; 
- *            you may use the 1A2A1_MASTER_ARM.h as template. 
- *          - Make sure to use the same concepts (Inherit from panel class, singleton, 
- *            PROGMEM etc.) as the other panels. Creating of a LED_TEXT table is optional.
- *          - Add the panel to a channel in the setup() function.
- *          - Adapt the max LED count of the affected channel as needed in the 
- *            "Define pinouts and channels" section.
+ *          (1) If you are building according to spec:
+ *              ...you only need to work with this file (the main .ino). Generally, the 
+ *              code in this files works as follows: at power up, three kinds of objects 
+ *              are created: one Board() object (think of it as the top-level object) that 
+ *              represents the BLM board itself. Ten Channel() objects, each of which 
+ *              represent on of the ten BL channels. And many Panel() objects, each of 
+ *              which represents a specific panel in the pit.
+ *              The board object handles the mode change logic. 
+ *              The channel objects handle the LED strips and FastLED commands.
+ *              The panel objects contain their LED roles and handle DCS-Bios commands.
+ *              In the setup() function, add only those panels that you are using. When 
+ *              adding, adjust the panel order according to your physical connections. 
+ *              Comment out the panels that you do not have connected. You do not need to 
+ *              adapt any LED indices or LED counts, or other files, anywhere. Also make 
+ *              sure that the pins defined below match your physical wiring.
+ *          (2) If you add panels in a non-standard order: 
+ *              Adapt the panel order in the setup() function as described in (1). If you
+ *              intend to add more panels to a channel than the default, make sure that you
+ *              increase the LED count of the affected channel (e.g. LIP_1_LED_COUNT) in 
+ *              the "Define pinouts and channels" section appropriately.
+ *          (3) If you want to change the colors: 
+ *              Open the Colors.h file and change the color definitions. Observe that in
+ *              this file, the colours according to MIL-STD-3099 are documented. However,
+ *              these may not fit exactly to the visual output that your LEDs provide. 
+ *              Therefore, adapt colors as needed for your build and LEDs in use.
+ *              Note: LEDs dimming uses FastLED's nscale8_video() function. It provides a
+ *              more color-preserving dimming effect than pure RGB value recalculation.
+ *          (4) If you have an non-standard wiring / pinout of your backlight controller:
+ *              Adapt the pinout in the "Define pinouts and channels" section in this file.
+ *          (5) If you are using custom panels: 
+ *              Adapt or create a new panel class in the "panels" folder. You may use the 
+ *              1A2A1_MASTER_ARM.h as template. Make sure to follow its structure closely.
+ * 
+ *          **Starting up* for the first time**
+ *          The BLM will start in mode 1 (DCS-BIOS) mode by default. This means you should
+ *          see only dark panels. By pressing the rotary encoder, you can switch to mode 2
+ *          (manual mode) and see manually dimmable backlights in green. Pressing again, 
+ *          you should see the rainbow pattern. Pressing again, you get back to mode 1. 
+ * 
+ *          **Troubleshooting**
+ *          (!) If the panels stay dark:
+ *              First confirm the correct wiring of the rotary  encoder. Second, observe
+ *              if the onboard LED is blinking fast. If so, this means that the power-on
+ *              self-test has detected an exceedance of  panels added to a channel. In 
+ *              this case, you need to increase the LED count of the affected channel in 
+ *              the "Define pinouts and channels" section.
+ *              If the onboard LED is not blinking, the code failed to initialize and 
+ *              start up properly. Revert the last changes.
+ *          (!) If the BLM does not react after a while of operation: 
+ *              I observed that a faulty LED on a panel can cause the BLM to stop working 
+ *              after a few mins of operation. The faulty LED is usually the first LED on 
+ *              a channel that stays dark. Replacing the faulty LED should fix the issue.
  * 
  *          **Technical Background**
  *          This sketch addresses the following functional OH requirements:
@@ -93,9 +124,9 @@
  *          5. Different users may build a different subset of panels and connect them 
  *             in varying orders as their build progresses; the code must be modular
  *             enough to allow this. 
- *          6. As the users' build progresses:
- *             - She/he shall not need to recalculate LED indices/counts
- *             - She/he shall not need to reprogram this BL controller (if build to spec)
+ *          6. As the users' build progresses, and more panels are added, the user shall 
+ *             not need to recalculate LED indices/counts. She/he shall not need to 
+ *             reprogram this BL controller (if build to spec)
  *          7. Code execution must be fast to avoid LED flickering (output side) or loss 
  *              of updates coming from DCS-BIOS (input side).
  *          8. Extensible for a future use of the PREFLT function (feasibility TBD)
@@ -170,7 +201,7 @@
 
 
 /********************************************************************************************************************
- * @brief   Define pinouts and channels 
+ * @brief   Define pinouts, LED counts and LED channels 
  * @remark  Check that the pinout corresponds to (YOUR!) wiring.
  * @details Syntax: Channel <Name as on Interconnect>(hardware pin, "Channel name as on PCB", expected max. led count);
  *          When adapting below code, observe memory constraints. Each LED uses 3 bytes of SRAM. 8KB are available.
@@ -181,31 +212,44 @@ const int encSw =    24;
 const int encA  =    22;              
 const int encB  =    23;  
 
+// LED counts for each channel
+const int LIP_1_LED_COUNT = 100;
+const int LIP_2_LED_COUNT = 120;
+const int UIP_1_LED_COUNT = 210;
+const int UIP_2_LED_COUNT = 210;
+const int LC_1_LED_COUNT = 304;
+const int LC_2_LED_COUNT = 150;
+const int RC_1_LED_COUNT = 170;
+const int RC_2_LED_COUNT = 266;
+const int AUX_1_LED_COUNT = 100;
+const int AUX_2_LED_COUNT = 100;
+
 // Static LED arrays for each channel
-CRGB LIP_1_leds[100];    // 100 LEDs
-CRGB LIP_2_leds[120];    // 120 LEDs
-CRGB UIP_1_leds[210];    // 210 LEDs
-CRGB UIP_2_leds[210];    // 210 LEDs
-CRGB LC_1_leds[304];     // 304 LEDs
-CRGB LC_2_leds[150];     // 150 LEDs
-CRGB RC_1_leds[170];     // 170 LEDs
-CRGB RC_2_leds[266];     // 266 LEDs
-CRGB AUX_1_leds[100];    // 100 LEDs
-CRGB AUX_2_leds[100];    // 100 LEDs
+CRGB LIP_1_leds[LIP_1_LED_COUNT];    // 100 LEDs
+CRGB LIP_2_leds[LIP_2_LED_COUNT];    // 120 LEDs
+CRGB UIP_1_leds[UIP_1_LED_COUNT];    // 210 LEDs
+CRGB UIP_2_leds[UIP_2_LED_COUNT];    // 210 LEDs
+CRGB LC_1_leds[LC_1_LED_COUNT];     // 304 LEDs
+CRGB LC_2_leds[LC_2_LED_COUNT];     // 150 LEDs
+CRGB RC_1_leds[RC_1_LED_COUNT];     // 170 LEDs
+CRGB RC_2_leds[RC_2_LED_COUNT];     // 266 LEDs
+CRGB AUX_1_leds[AUX_1_LED_COUNT];    // 100 LEDs
+CRGB AUX_2_leds[AUX_2_LED_COUNT];    // 100 LEDs
 
-// Define channel objects (and create them)
-Channel LIP_1(13, "Channel 1", LIP_1_leds, 100);
-Channel LIP_2(12, "Channel 2", LIP_2_leds, 120);
-Channel UIP_1(11, "Channel 3", UIP_1_leds, 210);
-Channel UIP_2(10, "Channel 4", UIP_2_leds, 210);                                   
-Channel LC_1(9, "Channel 5", LC_1_leds, 304);                                      
-Channel LC_2(8, "Channel 6", LC_2_leds, 150);
-Channel RC_1(7, "Channel 7", RC_1_leds, 170);               
-Channel RC_2(6, "Channel 8", RC_2_leds, 266);               
-Channel AUX_1(5, "Channel 9", AUX_1_leds, 100);                       //Spare channel
-Channel AUX_2(4, "Channel 10", AUX_2_leds, 100);                      //Spare channel
+// Create objects of "channel" class (with the right LED count)
+Channel LIP_1(13, "Channel 1", LIP_1_leds, LIP_1_LED_COUNT);
+Channel LIP_2(12, "Channel 2", LIP_2_leds, LIP_2_LED_COUNT);
+Channel UIP_1(11, "Channel 3", UIP_1_leds, UIP_1_LED_COUNT);
+Channel UIP_2(10, "Channel 4", UIP_2_leds, UIP_2_LED_COUNT);                                   
+Channel LC_1(9, "Channel 5", LC_1_leds, LC_1_LED_COUNT);                                      
+Channel LC_2(8, "Channel 6", LC_2_leds, LC_2_LED_COUNT);
+Channel RC_1(7, "Channel 7", RC_1_leds, RC_1_LED_COUNT);               
+Channel RC_2(6, "Channel 8", RC_2_leds, RC_2_LED_COUNT);               
+Channel AUX_1(5, "Channel 9", AUX_1_leds, AUX_1_LED_COUNT);           //Spare channel
+Channel AUX_2(4, "Channel 10", AUX_2_leds, AUX_2_LED_COUNT);          //Spare channel
 
-Board* board;                                                         // Pointer to singleton board instance
+// Create pointer to singleton board instance
+Board* board;                                                         
 
 
 /********************************************************************************************************************
@@ -218,10 +262,10 @@ void setup() {
     board->initializeBoard(encSw, encA, encB);                        // Initialize board with encoder pins
     
     // Initialize all channels
-    LIP_1.initialize();                                               // Initialize channels with FastLED
-    LIP_2.initialize();
-    UIP_1.initialize();
-    UIP_2.initialize();
+    LIP_1.initialize();                                               // Calling .initialize() on a channel object will
+    LIP_2.initialize();                                               // trigger FastLED.addLeds() with pin and led count
+    UIP_1.initialize();                                               
+    UIP_2.initialize();                                               
     LC_1.initialize();
     LC_2.initialize();
     RC_1.initialize();
@@ -229,9 +273,8 @@ void setup() {
     AUX_1.initialize();
     AUX_2.initialize();
 
-    // Register all channels with the board
-    board->registerChannel(&LIP_1);                                   // Register channels with the board
-    board->registerChannel(&LIP_2);
+    board->registerChannel(&LIP_1);                                   // Register channels with the board, so they are
+    board->registerChannel(&LIP_2);                                   // accessible by the board object
     board->registerChannel(&UIP_1);
     board->registerChannel(&UIP_2);
     board->registerChannel(&LC_1);
@@ -250,11 +293,12 @@ void setup() {
     LIP_1.addPanel<IfeiPanel>();
     LIP_1.addPanel<VideoRecordPanel>();
     LIP_1.addPanel<JettStationPanel>();
+    LIP_1.addPanel<JettPlacardPanel>();
 
     LIP_2.addPanel<EcmPanel>();
     LIP_2.addPanel<RwrControlPanel>();
     LIP_2.addPanel<StandbyInstrumentPanel>();
-    //LIP_2.addPanel<JettPlacardPanel>();
+    
 
 
     LC_1.addPanel<LdgGearPanel>();
