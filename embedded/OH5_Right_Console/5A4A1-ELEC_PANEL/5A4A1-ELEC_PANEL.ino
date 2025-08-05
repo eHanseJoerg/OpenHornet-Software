@@ -103,11 +103,11 @@ DcsBios::Switch3Pos batterySw("BATTERY_SW", BAT_OVRD, BAT_ON);
 // Initialize Hornet stepper objects (Parameters: stepsPerRevolution, 
 // zeroPosition, maxPosition, directionForward, coils)
 // You NEED TO calibrate the first four parameters to your specific stepper!
-HornetStepper eStepper(310, 5, 250, 1, COIL_1, COIL_2, COIL_3, COIL_4);  // E gauge
-HornetStepper uStepper(310, 5, 240, 1, COIL_5, COIL_6, COIL_7, COIL_8);  // U gauge
+HornetStepper eStepper(310, 5, 250, 1, COIL_1, COIL_2, COIL_3, COIL_4);  
+HornetStepper uStepper(310, 5, 240, 1, COIL_5, COIL_6, COIL_7, COIL_8);  
 
 
-// Callback functions for DCS-BIOS (we'll handle these in the next step)
+// Callback functions for DCS-BIOS
 void onVoltEChange(unsigned int newValue) {
     eStepper.setTarget(newValue);
 }
