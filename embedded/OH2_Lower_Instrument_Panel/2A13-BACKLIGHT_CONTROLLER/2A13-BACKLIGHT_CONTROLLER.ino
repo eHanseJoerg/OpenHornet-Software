@@ -155,7 +155,8 @@
 #include "panels/2A2A1A8_STANDBY_INSTRUMENT.h"
 #include "panels/4A2A1_LDG_GEAR_PANEL.h"
 #include "panels/4A3A1_SELECT_JETT_PANEL.h"
-#include "panels/4A1_LC_ALL_PANELS.h"
+#include "panels/4A1_LC1_ALL_PANELS.h"
+#include "panels/4A1_LC2_ALL_PANELS.h"
 #include "panels/4A1_LC_Flood.h"
 #include "panels/5A2A7_LDG_CHECKLIST.h"
 #include "panels/5A2A4_RADAR_ALT.h"
@@ -186,8 +187,8 @@ CRGB LIP_1_leds[100];    // 100 LEDs
 CRGB LIP_2_leds[120];    // 120 LEDs
 CRGB UIP_1_leds[210];    // 210 LEDs
 CRGB UIP_2_leds[210];    // 210 LEDs
-CRGB LC_1_leds[304];     // 304 LEDs
-CRGB LC_2_leds[150];     // 150 LEDs
+CRGB LC_1_leds[250];     // 250 LEDs 
+CRGB LC_2_leds[215];     // 215 LEDs
 CRGB RC_1_leds[170];     // 170 LEDs
 CRGB RC_2_leds[266];     // 266 LEDs
 CRGB AUX_1_leds[100];    // 100 LEDs
@@ -198,8 +199,8 @@ Channel LIP_1(13, "Channel 1", LIP_1_leds, 100);
 Channel LIP_2(12, "Channel 2", LIP_2_leds, 120);
 Channel UIP_1(11, "Channel 3", UIP_1_leds, 210);
 Channel UIP_2(10, "Channel 4", UIP_2_leds, 210);                                   
-Channel LC_1(9, "Channel 5", LC_1_leds, 304);                                      
-Channel LC_2(8, "Channel 6", LC_2_leds, 150);
+Channel LC_1(9, "Channel 5", LC_1_leds, 250);                                      
+Channel LC_2(8, "Channel 6", LC_2_leds, 215);
 Channel RC_1(7, "Channel 7", RC_1_leds, 170);               
 Channel RC_2(6, "Channel 8", RC_2_leds, 266);               
 Channel AUX_1(5, "Channel 9", AUX_1_leds, 100);                       //Spare channel
@@ -259,7 +260,9 @@ void setup() {
 
     LC_1.addPanel<LdgGearPanel>();
     LC_1.addPanel<SelectJettPanel>();
-    LC_1.addPanel<LcAllPanels>();
+    LC_1.addPanel<Lc1AllPanels>();
+    
+    LC_2.addPanel<Lc2AllPanels>();
 
     RC_1.addPanel<LdgChecklistPanel>();
     RC_1.addPanel<RadarAltPanel>();
