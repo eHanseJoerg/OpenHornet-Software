@@ -60,8 +60,16 @@
  *          | SDA | TEMP SNSR                     |                  |
  *          | SCL | TEMP SNSR                     |                  |
  *          | 2   | J12 & J13 Cooling fan headers |                  |
- *   
- *          **How to use**
+ *  
+ * 
+ *          **User guide**
+ *          The BLM will start in mode 1 (DCS-BIOS) mode by default. This means you should
+ *          see only dark panels. By pressing the rotary encoder, you can switch to mode 2
+ *          (manual mode) and see manually dimmable backlights in green. Pressing again, 
+ *          you should see a rainbow pattern. Pressing again, you get back to mode 1.
+ *
+ *
+ *          **Configuration guide**
  *          (1) If you are building according to spec:
  *              ...you only need to work with this file (the main .ino). Generally, the 
  *              code in works as follows: at power up, three kinds of objects 
@@ -101,12 +109,6 @@
  *          (5) If you are using custom panels: 
  *              Adapt or create a new panel class in the "panels" folder. You may use the 
  *              1A2A1_MASTER_ARM.h as template. Make sure to follow its structure closely.
- * 
- *          **Starting up* for the first time**
- *          The BLM will start in mode 1 (DCS-BIOS) mode by default. This means you should
- *          see only dark panels. By pressing the rotary encoder, you can switch to mode 2
- *          (manual mode) and see manually dimmable backlights in green. Pressing again, 
- *          you should see the rainbow pattern. Pressing again, you get back to mode 1. 
  * 
  *          **Troubleshooting**
  *          (!) If the panels stay dark:
@@ -178,6 +180,7 @@
 
 #include "FastLED.h"
 #include "DcsBios.h"
+#include "RotaryEncoder.h"
 #include "helpers/Panel.h"
 #include "helpers/Channel.h"
 #include "helpers/Colors.h"
