@@ -32,7 +32,7 @@
 /**
  * @file    2A13-BACKLIGHT_CONTROLLER.ino
  * @author  Ulukaii, Arribe, Higgins
- * @date    August 03, 2025
+ * @date    October 12, 2025
  * @version V 0.4.5 (tested)
  * @warning This sketch is based on OH-Interconnect. Adapt it to your actual wiring and 
  *          panel versions.
@@ -52,8 +52,8 @@
  *          | 8   | J7 LC_CH2                     | Channel 6        |
  *          | 7   | J8 RC_CH1                     | Channel 7        |
  *          | 6   | J9 RC_CH2                     | Channel 8        |
- *          | 5   | J10 NC                        | Channel 9        |
- *          | 4   | J11 NC                        | Channel 10       |
+ *          | 5   | J10 LC_FLOOD                  | Channel 9        |
+ *          | 4   | J11 RC_FLOOD                  | Channel 10       |
  *          | 22  | J14 SIMPWR_BLM_A              |                  |
  *          | 23  | J14 SIMPWR_BLM_B              |                  |
  *          | 24  | J14 SIMPWR_BLM_PUSH           |                  |
@@ -64,14 +64,21 @@
  *          **How to use**
  *          (1) If you are building according to spec:
  *              ...you only need to work with this file (the main .ino). Generally, the 
- *              code in this files works as follows: at power up, three kinds of objects 
- *              are created: one Board() object (think of it as the top-level object) that 
+ *              code in works as follows: at power up, three kinds of objects 
+ *              are created: one Board() object -the top-level object - that 
  *              represents the BLM board itself. Ten Channel() objects, each of which 
  *              represent on of the ten BL channels. And many Panel() objects, each of 
  *              which represents a specific panel in the pit.
- *              The board object handles the mode change logic. 
- *              The channel objects handle the LED strips and FastLED commands.
- *              The panel objects contain their LED roles and handle DCS-Bios commands.
+ *              The board object handles the change between the three modes (normal, 
+ *              manual, rainbow) that you can invoke with the rotary encoder. It also 
+ *              handles the brightness control for the normal mode. Therefore, 
+ *              it is the interface to the user.
+ *              Each channel object handles one LED strip and FastLED commands. Therefore, 
+ *              they are the interface to the hardware.
+ *              The panel objects represent cockpit panels and 'know' which of their LED
+ *              has which role (e.g. backlighting or specific indicators such as "FIRE").
+ *              They also handle DCS-Bios commands. Therefore, they are the interface to 
+ *              DCS-BIOS.
  *              In the setup() function, add only those panels that you are using. When 
  *              adding, adjust the panel order according to your physical connections. 
  *              Comment out the panels that you do not have connected. You do not need to 
@@ -222,8 +229,8 @@ const int LC_1_LED_COUNT = 250;
 const int LC_2_LED_COUNT = 215;
 const int RC_1_LED_COUNT = 170;
 const int RC_2_LED_COUNT = 266;
-const int AUX_1_LED_COUNT = 100;
-const int AUX_2_LED_COUNT = 100;
+const int LC_FLOOD_LED_COUNT = 100;
+const int RC_FLOOD_LED_COUNT = 100;
 
 // Static LED arrays for each channel
 CRGB LIP_1_leds[LIP_1_LED_COUNT];    // 100 LEDs
@@ -234,8 +241,8 @@ CRGB LC_1_leds[LC_1_LED_COUNT];     // 250 LEDs
 CRGB LC_2_leds[LC_2_LED_COUNT];     // 215 LEDs
 CRGB RC_1_leds[RC_1_LED_COUNT];     // 170 LEDs
 CRGB RC_2_leds[RC_2_LED_COUNT];     // 266 LEDs
-CRGB AUX_1_leds[AUX_1_LED_COUNT];    // 100 LEDs
-CRGB AUX_2_leds[AUX_2_LED_COUNT];    // 100 LEDs
+CRGB LC_FLOOD_leds[LC_FLOOD_LED_COUNT];    // 100 LEDs
+CRGB RC_FLOOD_leds[RC_FLOOD_LED_COUNT];    // 100 LEDs
 
 // Create objects of "channel" class (with the right LED count)
 Channel LIP_1(13, "Channel 1", LIP_1_leds, LIP_1_LED_COUNT);
@@ -246,8 +253,8 @@ Channel LC_1(9, "Channel 5", LC_1_leds, LC_1_LED_COUNT);
 Channel LC_2(8, "Channel 6", LC_2_leds, LC_2_LED_COUNT);
 Channel RC_1(7, "Channel 7", RC_1_leds, RC_1_LED_COUNT);               
 Channel RC_2(6, "Channel 8", RC_2_leds, RC_2_LED_COUNT);               
-Channel AUX_1(5, "Channel 9", AUX_1_leds, AUX_1_LED_COUNT);           //Spare channel
-Channel AUX_2(4, "Channel 10", AUX_2_leds, AUX_2_LED_COUNT);          //Spare channel
+Channel LC_FLOOD(5, "Channel 9", LC_FLOOD_leds, LC_FLOOD_LED_COUNT);           //Spare channel
+Channel RC_FLOOD(4, "Channel 10", RC_FLOOD_leds, RC_FLOOD_LED_COUNT);          //Spare channel
 
 // Create pointer to singleton board instance
 Board* board;                                                         
@@ -271,8 +278,8 @@ void setup() {
     LC_2.initialize();
     RC_1.initialize();
     RC_2.initialize();
-    AUX_1.initialize();
-    AUX_2.initialize();
+    LC_FLOOD.initialize();
+    RC_FLOOD.initialize();
 
     board->registerChannel(&LIP_1);                                   // Register channels with the board, so they are
     board->registerChannel(&LIP_2);                                   // accessible by the board object
@@ -282,8 +289,8 @@ void setup() {
     board->registerChannel(&LC_2);
     board->registerChannel(&RC_1);
     board->registerChannel(&RC_2);
-    board->registerChannel(&AUX_1);
-    board->registerChannel(&AUX_2);
+    board->registerChannel(&LC_FLOOD);
+    board->registerChannel(&RC_FLOOD);
 
     UIP_1.addPanel<MasterArmPanel>();                                 // Instantiate the panels;
     UIP_1.addPanel<EwiPanel>();                                       // Adapt order according to your physical wiring; 
@@ -316,7 +323,8 @@ void setup() {
     RC_1.addPanel<Rc1AllRemainingPanels>();
     RC_2.addPanel<Rc2AllPanels>();
 
-    AUX_1.addPanel<LcFloodPanel>();
+    LC_FLOOD.addPanel<LcFloodLights>();
+    RC_FLOOD.addPanel<RcFloodLights>();
 
     FastLED.show();                                                   // Show the LEDs
     DcsBios::setup();                                                 // Run DCS Bios setup function

@@ -9,17 +9,17 @@
  *             |_|
  *   ----------------------------------------------------------------------------------
  *  
- * @file      4A1_LC_Flood.h
+ * @file      4A1_RC_Flood.h
  * @author    Ulukaii
- * @date      24.05.2025
+ * @date      12.10.2025
  * @version   t 0.3.2
  * @copyright Copyright 2016-2025 OpenHornet. See 2A13-BACKLIGHT_CONTROLLER.ino for details.
- * @brief     Implements flood lighting for the Left Console. Assumes all lights are connected to the same WS2812 strip.
+ * @brief     Implements flood lighting for the Right Console. Assumes all lights are connected to the same WS2812 strip.
  *********************************************************************************************************************/
 
 
-#ifndef __LC_FLOOD_H
-#define __LC_FLOOD_H
+#ifndef __RC_FLOOD_H
+#define __RC_FLOOD_H
 
 #include "DcsBios.h"
 #include "../helpers/Panel.h"
@@ -29,8 +29,8 @@
  * @details "Role" in this context refers to the LED role enum in the Panel.h file (enum used for memory efficiency).
  * @remark  This table is stored in PROGMEM for memory efficiency.
  ********************************************************************************************************************/
-const int LC_FLOOD_LED_COUNT = 100;  // Total number of LEDs in the panel
-const Led lcFloodLedTable[LC_FLOOD_LED_COUNT] PROGMEM = {
+const int RC_FLOOD_LED_COUNT = 100;  // Total number of LEDs in the panel
+const Led rcFloodLedTable[RC_FLOOD_LED_COUNT] PROGMEM = {
     {0, LED_FLOOD}, {1, LED_FLOOD}, {2, LED_FLOOD}, {3, LED_FLOOD}, {4, LED_FLOOD}, 
     {5, LED_FLOOD}, {6, LED_FLOOD}, {7, LED_FLOOD}, {8, LED_FLOOD}, {9, LED_FLOOD},
     {10, LED_FLOOD}, {11, LED_FLOOD}, {12, LED_FLOOD}, {13, LED_FLOOD}, {14, LED_FLOOD}, 
@@ -54,7 +54,7 @@ const Led lcFloodLedTable[LC_FLOOD_LED_COUNT] PROGMEM = {
 };
 
 /********************************************************************************************************************
- * @brief   Left Console Flood Lighting class
+ * @brief   Right Console Flood Lighting class
  * @details Backlighting controller for the Left Console flood lighting.
  *          Total LEDs: 100
  *          Backlight LEDs: 100 (all LEDs are backlights)
@@ -62,18 +62,18 @@ const Led lcFloodLedTable[LC_FLOOD_LED_COUNT] PROGMEM = {
  * @remark  This class inherits from the "basic" Panel class in panels/Panel.h
  *          It also enforces a singleton pattern; this is required to use DCS-BIOS callbacks in class methods.
  ********************************************************************************************************************/
-class LcFloodLights : public Panel {
+class RcFloodLights : public Panel {
 public:
     /**
-     * @brief Gets the singleton instance of the LcFloodLights class
+     * @brief Gets the singleton instance of the RcFloodLights class
      * @param startIndex The starting index for this panel's LEDs on the strip
      * @param ledStrip Pointer to the LED strip array
      * @return Pointer to the singleton instance
      * @see This method is called by the main .ino file's addPanel() method to create the panel instance
      */
-    static LcFloodLights* getInstance(int startIndex = 0, CRGB* ledStrip = nullptr) {
+    static RcFloodLights* getInstance(int startIndex = 0, CRGB* ledStrip = nullptr) {
         if (!instance) {
-            instance = new LcFloodLights(startIndex, ledStrip);
+            instance = new RcFloodLights(startIndex, ledStrip);
         }
         return instance;
     }
@@ -85,11 +85,11 @@ private:
      * @param ledStrip Pointer to the LED strip array
      * @see This method is called by the public getInstance() if and only if no instance exists yet
      */
-    LcFloodLights(int startIndex, CRGB* ledStrip) {
+    RcFloodLights(int startIndex, CRGB* ledStrip) {
         panelStartIndex = startIndex;
         this->ledStrip = ledStrip;
-        ledCount = LC_FLOOD_LED_COUNT;
-        ledTable = lcFloodLedTable;
+        ledCount = RC_FLOOD_LED_COUNT;
+        ledTable = rcFloodLedTable;
     }
 
     // Static callback functions for DCS-BIOS
@@ -104,10 +104,10 @@ private:
     DcsBios::IntegerBuffer floodDimmerBuffer{FA_18C_hornet_FLOOD_DIMMER, onFloodDimmerChange};
 
     // Instance data
-    static LcFloodLights* instance;
+    static RcFloodLights* instance;
 };
 
 // Initialize static instance pointer
-LcFloodLights* LcFloodLights::instance = nullptr;
+RcFloodLights* RcFloodLights::instance = nullptr;
 
 #endif 
