@@ -199,6 +199,7 @@
 #include "panels/4A1_LC1_ALL_PANELS.h"
 #include "panels/4A1_LC2_ALL_PANELS.h"
 #include "panels/4A1_LC_Flood.h"
+#include "panels/5A1_RC_Flood.h"
 #include "panels/5A2A7_LDG_CHECKLIST.h"
 #include "panels/5A2A4_RADAR_ALT.h"
 #include "panels/5A4A1_HYD_PRESS.h"

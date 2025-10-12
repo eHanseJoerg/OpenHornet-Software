@@ -29,8 +29,8 @@
  * @details "Role" in this context refers to the LED role enum in the Panel.h file (enum used for memory efficiency).
  * @remark  This table is stored in PROGMEM for memory efficiency.
  ********************************************************************************************************************/
-const int RC_FLOOD_LED_COUNT = 100;  // Total number of LEDs in the panel
-const Led rcFloodLedTable[RC_FLOOD_LED_COUNT] PROGMEM = {
+const int RCF_LED_COUNT = 100;  // Total number of LEDs in the panel
+const Led rcFloodLedTable[RCF_LED_COUNT] PROGMEM = {
     {0, LED_FLOOD}, {1, LED_FLOOD}, {2, LED_FLOOD}, {3, LED_FLOOD}, {4, LED_FLOOD}, 
     {5, LED_FLOOD}, {6, LED_FLOOD}, {7, LED_FLOOD}, {8, LED_FLOOD}, {9, LED_FLOOD},
     {10, LED_FLOOD}, {11, LED_FLOOD}, {12, LED_FLOOD}, {13, LED_FLOOD}, {14, LED_FLOOD}, 
@@ -88,7 +88,7 @@ private:
     RcFloodLights(int startIndex, CRGB* ledStrip) {
         panelStartIndex = startIndex;
         this->ledStrip = ledStrip;
-        ledCount = RC_FLOOD_LED_COUNT;
+        ledCount = RCF_LED_COUNT;
         ledTable = rcFloodLedTable;
     }
 
