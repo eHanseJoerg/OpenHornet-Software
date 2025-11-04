@@ -196,7 +196,11 @@
 #include "panels/2A2A1A8_STANDBY_INSTRUMENT.h"
 #include "panels/4A2A1_LDG_GEAR_PANEL.h"
 #include "panels/4A3A1_SELECT_JETT_PANEL.h"
-#include "panels/4A1_LC1_ALL_PANELS.h"
+#include "panels/4A4A1_FIRE_TEST_PANEL.h"
+#include "panels/10A1A1_SIM_PWR_PANEL.h"
+#include "panels/4A4A2_GEN_TIE_PANEL.h"
+#include "panels/4A4A2_EXT_LTS_PANEL.h"
+#include "panels/4A5A1_FUEL_PANEL.h"
 #include "panels/4A1_LC2_ALL_PANELS.h"
 #include "panels/4A1_LC_Flood.h"
 #include "panels/5A1_RC_Flood.h"
@@ -236,15 +240,15 @@ const int RC_2_LED_COUNT = 266;
 const int LC_FLOOD_LED_COUNT = 100;
 const int RC_FLOOD_LED_COUNT = 100;
 
-// Static LED arrays for each channel
-CRGB LIP_1_leds[LIP_1_LED_COUNT];    // 100 LEDs
-CRGB LIP_2_leds[LIP_2_LED_COUNT];    // 120 LEDs
-CRGB UIP_1_leds[UIP_1_LED_COUNT];    // 210 LEDs
-CRGB UIP_2_leds[UIP_2_LED_COUNT];    // 210 LEDs
-CRGB LC_1_leds[LC_1_LED_COUNT];     // 250 LEDs
-CRGB LC_2_leds[LC_2_LED_COUNT];     // 215 LEDs
-CRGB RC_1_leds[RC_1_LED_COUNT];     // 170 LEDs
-CRGB RC_2_leds[RC_2_LED_COUNT];     // 266 LEDs
+// Static LED arrays for each channel, using the LED counts defined abv
+CRGB LIP_1_leds[LIP_1_LED_COUNT];    
+CRGB LIP_2_leds[LIP_2_LED_COUNT];    
+CRGB UIP_1_leds[UIP_1_LED_COUNT];    
+CRGB UIP_2_leds[UIP_2_LED_COUNT];    
+CRGB LC_1_leds[LC_1_LED_COUNT];     
+CRGB LC_2_leds[LC_2_LED_COUNT];     
+CRGB RC_1_leds[RC_1_LED_COUNT];     
+CRGB RC_2_leds[RC_2_LED_COUNT];     
 CRGB LC_FLOOD_leds[LC_FLOOD_LED_COUNT];    // 100 LEDs
 CRGB RC_FLOOD_leds[RC_FLOOD_LED_COUNT];    // 100 LEDs
 
@@ -257,8 +261,8 @@ Channel LC_1(9, "Channel 5", LC_1_leds, LC_1_LED_COUNT);
 Channel LC_2(8, "Channel 6", LC_2_leds, LC_2_LED_COUNT);
 Channel RC_1(7, "Channel 7", RC_1_leds, RC_1_LED_COUNT);               
 Channel RC_2(6, "Channel 8", RC_2_leds, RC_2_LED_COUNT);               
-Channel LC_FLOOD(5, "Channel 9", LC_FLOOD_leds, LC_FLOOD_LED_COUNT);           //Spare channel
-Channel RC_FLOOD(4, "Channel 10", RC_FLOOD_leds, RC_FLOOD_LED_COUNT);          //Spare channel
+Channel LC_FLOOD(5, "Channel 9", LC_FLOOD_leds, LC_FLOOD_LED_COUNT);           
+Channel RC_FLOOD(4, "Channel 10", RC_FLOOD_leds, RC_FLOOD_LED_COUNT);          
 
 // Create pointer to singleton board instance
 Board* board;                                                         
@@ -316,7 +320,11 @@ void setup() {
 
     LC_1.addPanel<LdgGearPanel>();
     LC_1.addPanel<SelectJettPanel>();
-    LC_1.addPanel<Lc1AllPanels>();
+    LC_1.addPanel<FireTestPanel>();
+    LC_1.addPanel<SimPwrPanel>();
+    LC_1.addPanel<GenTiePanel>();
+    LC_1.addPanel<ExtLtsPanel>();
+    LC_1.addPanel<FuelPanel>();
     
     LC_2.addPanel<Lc2AllPanels>();
 
