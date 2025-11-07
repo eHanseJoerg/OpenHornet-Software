@@ -56,7 +56,7 @@ private:
         deltaHue = 3;                                                 
         currentMode = MODE_NORMAL;  // Initialize to normal mode
         brightness = 128;  // Initialize manual mode brightness to 50%
-        rainbowBrightness = 128;  // Initialize rainbow mode brightness to 50% (0-255)
+        rainbowBrightness = 64;  // Initialize rainbow mode brightness to 25% (0-255)
         rotary_pos = 0;   // Initialize rotary encoder position
         encoder = nullptr;
     }
