@@ -223,6 +223,11 @@
  *          When adapting below code, observe memory constraints. Each LED uses 3 bytes of SRAM. 8KB are available.
  ********************************************************************************************************************/
 
+
+// Voltage and current definitions. Adapt to your ATX PSU specs.
+const int VOLTAGE = 5;
+const int MAX_MILLIAMPS = 20000;
+
 // Hardware pin definitions
 const int encSw =    24;              
 const int encA  =    22;              
@@ -235,7 +240,7 @@ const int UIP_1_LED_COUNT = 210;
 const int UIP_2_LED_COUNT = 210;
 const int LC_1_LED_COUNT = 250;
 const int LC_2_LED_COUNT = 215;
-const int RC_1_LED_COUNT = 170;
+const int RC_1_LED_COUNT = 171;
 const int RC_2_LED_COUNT = 266;
 const int LC_FLOOD_LED_COUNT = 100;
 const int RC_FLOOD_LED_COUNT = 100;
@@ -338,6 +343,8 @@ void setup() {
     LC_FLOOD.addPanel<LcFloodLights>();
     RC_FLOOD.addPanel<RcFloodLights>();
 
+    FastLED.setMaxPowerInVoltsAndMilliamps(VOLTAGE, MAX_MILLIAMPS);    // Set the maximum power in volts and milliamps
+    FastLED.setMaxRefreshRate(100);                                   // Set the maximum refresh rate to 100 Hz instead of std. 400 Hz. Slightly reduces CPU load.
     FastLED.show();                                                   // Show the LEDs
     DcsBios::setup();                                                 // Run DCS Bios setup function
 }

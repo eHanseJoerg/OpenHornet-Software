@@ -30,7 +30,7 @@
  * @details "Role" in this context refers to the LED role enum in the Panel.h file (enum used for memory efficiency).
  * @remark  This table is stored in PROGMEM for memory efficiency.
  ********************************************************************************************************************/
-const int RC1_ALL_REMAINING_LED_COUNT = 78;  // Total number of LEDs in the panel
+const int RC1_ALL_REMAINING_LED_COUNT = 79;  // Total number of LEDs in the panel
 const Led rc1AllRemainingLedTable[RC1_ALL_REMAINING_LED_COUNT] PROGMEM = {
     {0, LED_CONSOLE_BL}, {1, LED_CONSOLE_BL}, {2, LED_CONSOLE_BL}, {3, LED_CONSOLE_BL}, {4, LED_CONSOLE_BL}, 
     {5, LED_CONSOLE_BL}, {6, LED_CONSOLE_BL}, {7, LED_CONSOLE_BL}, {8, LED_CONSOLE_BL}, {9, LED_CONSOLE_BL},
@@ -47,7 +47,7 @@ const Led rc1AllRemainingLedTable[RC1_ALL_REMAINING_LED_COUNT] PROGMEM = {
     {60, LED_CONSOLE_BL}, {61, LED_CONSOLE_BL}, {62, LED_CONSOLE_BL}, {63, LED_CONSOLE_BL}, {64, LED_CONSOLE_BL}, 
     {65, LED_CONSOLE_BL}, {66, LED_CONSOLE_BL}, {67, LED_CONSOLE_BL}, {68, LED_CONSOLE_BL}, {69, LED_CONSOLE_BL},
     {70, LED_CONSOLE_BL}, {71, LED_CONSOLE_BL}, {72, LED_CONSOLE_BL}, {73, LED_CONSOLE_BL}, {74, LED_CONSOLE_BL}, 
-    {75, LED_CONSOLE_BL}, {76, LED_CONSOLE_BL}, {77, LED_CONSOLE_BL}
+    {75, LED_CONSOLE_BL}, {76, LED_CONSOLE_BL}, {77, LED_CONSOLE_BL}, {78, LED_CONSOLE_BL}
 };
 
 /********************************************************************************************************************

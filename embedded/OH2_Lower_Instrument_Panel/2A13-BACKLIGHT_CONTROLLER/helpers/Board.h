@@ -56,6 +56,7 @@ private:
         deltaHue = 3;                                                 
         currentMode = MODE_NORMAL;  // Initialize to normal mode
         brightness = 128;  // Initialize manual mode brightness to 50%
+        rainbowBrightness = 128;  // Initialize rainbow mode brightness to 50% (0-255)
         rotary_pos = 0;   // Initialize rotary encoder position
         encoder = nullptr;
     }
@@ -68,6 +69,7 @@ private:
     int deltaHue;                                                     // Hue change between LEDs for rainbow effect
     int currentMode;                                                  // Current operating mode
     int brightness;                                                   // Current brightness level (0-255), for manual mode
+    int rainbowBrightness;                                             // Brightness level (0-255) for rainbow mode
     int dcs_brightness_console;                                        // Current brightness level (0-255), for DCS-BIOS controlled mode
     int dcs_brightness_instrument;                                     // Current brightness level (0-255), for DCS-BIOS controlled mode
     int dcs_brightness_flood;                                          // Current brightness level (0-255), for DCS-BIOS controlled mode
@@ -157,6 +159,9 @@ public:
                 //sendDcsBiosMessage("FLOOD_DIMMER", dcs_brightness_flood);
             }
             if (currentMode == MODE_RAINBOW) {
+                rainbowBrightness = 64;                  // Reset to 25% brightness
+                encoder->tick();  // Update encoder state
+                rotary_pos = encoder->getPosition();  // Sync encoder position to avoid false change detection
                 setAllLightsOff();  // Clear any previous state
                 LedUpdateState::getInstance()->setUpdateFlag(true);   // Activate "update is needed" flag
             }
@@ -176,10 +181,10 @@ public:
     void processMode() {
         int newPos = 0;  
         switch(currentMode) {
-            case MODE_NORMAL:                                         // LEDs controlled by DCS BIOS
+            case MODE_NORMAL:                                         // MODE 1: LEDs controlled by DCS BIOS
                 DcsBios::loop();
                 break;
-            case MODE_MANUAL:                                         // LEDs controlled manually through BKLT switch
+            case MODE_MANUAL:                                         // MODE 2: LEDs controlled manually through BKLT switch
                 encoder->tick();
                 newPos = encoder->getPosition();
                 if (newPos != rotary_pos) {
@@ -193,8 +198,25 @@ public:
                     fillSolid(NVIS_GREEN_A);                          
                 }
                 break;   
-            case MODE_RAINBOW:                                     //Rainbow test mode
-                fillRainbow();
+            case MODE_RAINBOW:                                        // MODE 3: Rainbow test mode
+                encoder->tick();
+                newPos = encoder->getPosition();
+                if (newPos != rotary_pos) {
+                    RotaryEncoder::Direction direction = encoder->getDirection();
+                    if (direction == RotaryEncoder::Direction::CLOCKWISE) {
+                        rainbowBrightness = (rainbowBrightness < 224) ? rainbowBrightness + 32 : 255;  // Add 32 or cap at 255
+                    } else {
+                        rainbowBrightness = (rainbowBrightness > 32) ? rainbowBrightness - 32 : 0;  // Subtract 32 or cap at 0
+                    }
+                    rotary_pos = newPos;
+                }
+                for (int i = 0; i < channelCount; i++) {
+                    fill_rainbow(channels[i]->getLeds(), channels[i]->getLedCount(), thisHue, deltaHue);
+                    // Scale down brightness to reduce maximum brightness
+                    nscale8_video(channels[i]->getLeds(), channels[i]->getLedCount(), rainbowBrightness);
+                }
+                thisHue++;  // Increment the hue for the next frame
+                LedUpdateState::getInstance()->setUpdateFlag(true);
                 break;
         }
     }
@@ -227,26 +249,13 @@ public:
     }
 
     /**
-     * @brief Fills all channels with a rainbow pattern
-     * @see This method is called by processMode() in Board.h
-     */
-    void fillRainbow() {                                              // Fill all channels with a rainbow pattern
-        for (int i = 0; i < channelCount; i++) {
-            fill_rainbow(channels[i]->getLeds(), channels[i]->getLedCount(), thisHue, deltaHue);
-        }
-        thisHue++;  // Increment the hue for the next frame
-        LedUpdateState::getInstance()->setUpdateFlag(true);
-    }
-
-
-    /**
      * @brief Updates all channels with new instrument lighting value
      * @param newValue The new brightness value
      * @see This method is conditionally called by onInstrIntLtChange() in Board.h
      */
     void updateInstrumentLights(uint16_t newValue) {
         dcs_brightness_instrument = newValue;                         // In any mode, store the DCS-BIOS brightness value
-        if (currentMode != MODE_NORMAL) return;                       // Only in normal mode, update the channels
+        if (currentMode != MODE_NORMAL) return;                       // But only in normal mode, actually send update to channels
         for (int i = 0; i < channelCount; i++) {
             channels[i]->updateBacklights(newValue);
         }
@@ -261,7 +270,7 @@ public:
      */
     void updateConsoleLights(uint16_t newValue) {
         dcs_brightness_console = newValue;                            // In any mode, store the DCS-BIOS brightness value
-        if (currentMode != MODE_NORMAL) return;                       // Only in normal mode, update the channels
+        if (currentMode != MODE_NORMAL) return;                       // But only in normal mode, actually send update to channels
         for (int i = 0; i < channelCount; i++) {
             channels[i]->updateConsoleLights(newValue);
         }
