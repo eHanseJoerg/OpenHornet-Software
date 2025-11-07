@@ -139,8 +139,19 @@ public:
      */
     int handleModeChange() {
         static bool lastButtonState = HIGH;
+        static unsigned long lastButtonPressTime = 0;
+        const unsigned long BUTTON_THROTTLE_MS = 1000;  // Limit button presses to once per second
+        
         bool currentButtonState = digitalRead(encSwPin);
+        unsigned long currentTime = millis();
+        
         if (currentButtonState == LOW && lastButtonState == HIGH) {   // Button has just been pressed
+            // Throttle: only process if at least 1 second has passed since last press
+            if (currentTime - lastButtonPressTime < BUTTON_THROTTLE_MS) {
+                lastButtonState = currentButtonState;
+                return currentMode;  // Return current mode without changing
+            }
+            lastButtonPressTime = currentTime;  // Update last press time
             int previousMode = currentMode;                           // Store previous mode
             currentMode = (currentMode % 3) + 1;                      // Cycle to next mode
             
