@@ -280,7 +280,7 @@ Board* board;
  ********************************************************************************************************************/
 void setup() {
     board = Board::getInstance();                                     // Get board instance
-    board->initializeBoard(encSw, encA, encB);                        // Initialize board with encoder pins
+    board->setupRotaryEncoder(encSw, encA, encB);                    // Set up rotary encoder with switch and encoder pins
     
     // Initialize all channels
     LIP_1.initialize();                                               // Calling .initialize() on a channel object will
@@ -320,8 +320,6 @@ void setup() {
     LIP_2.addPanel<EcmPanel>();
     LIP_2.addPanel<RwrControlPanel>();
     LIP_2.addPanel<StandbyInstrumentPanel>();
-    
-
 
     LC_1.addPanel<LdgGearPanel>();
     LC_1.addPanel<SelectJettPanel>();
@@ -343,7 +341,7 @@ void setup() {
     LC_FLOOD.addPanel<LcFloodLights>();
     RC_FLOOD.addPanel<RcFloodLights>();
 
-    FastLED.setMaxPowerInVoltsAndMilliamps(VOLTAGE, MAX_MILLIAMPS);    // Set the maximum power in volts and milliamps
+    FastLED.setMaxPowerInVoltsAndMilliamps(VOLTAGE, MAX_MILLIAMPS);   // Set the maximum power in volts and milliamps
     FastLED.setMaxRefreshRate(100);                                   // Set the maximum refresh rate to 100 Hz instead of std. 400 Hz. Slightly reduces CPU load.
     FastLED.show();                                                   // Show the LEDs
     DcsBios::setup();                                                 // Run DCS Bios setup function
