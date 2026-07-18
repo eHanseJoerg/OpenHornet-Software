@@ -11,7 +11,7 @@
  *  
  * @file      Board.h
  * @author    Ulukaii
- * @date      08.Nov 2025
+ * @date      18.Jul 2026
  * @version   t 0.3.5
  * @copyright Copyright 2016-2025 OpenHornet. See 2A13-BACKLIGHT_CONTROLLER.ino for details.
  * @brief     The board class is responsible for the physical input/output: catch rotary encoder commands, update LEDs.
