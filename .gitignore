@@ -9,3 +9,4 @@ docs/html
 release/
 embedded/**/build/
 .cursorrules
+embedded/OH2_Lower_Instrument_Panel/2A13-BACKLIGHT_CONTROLLER/FASTLED_ISSUE_ANALYSIS.md

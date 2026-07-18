@@ -60,7 +60,15 @@
  *          | SDA | TEMP SNSR                     |                  |
  *          | SCL | TEMP SNSR                     |                  |
  *          | 2   | J12 & J13 Cooling fan headers |                  |
- *  
+ * 
+ * 
+ *          **Compilation guide **
+ *          Needs FastLED 3.10.3. Otherwise FastLED serial colludes with 
+ *          DCS-BIOS serial communication and the BLM will not work. Install the library 
+ *          using the following methods:
+ *          - Arduino IDE: Library Manager → FastLED → version dropdown → 3.10.3.
+ *          - arduino-cli: arduino-cli lib install FastLED@3.10.3
+ *          - PlatformIO: lib_deps = fastled/FastLED@3.10.3  
  * 
  *          **User guide**
  *          The BLM will start in mode 1 (DCS-BIOS) mode by default. This means you should
@@ -175,7 +183,11 @@
 #ifdef __AVR__                                                        // Include AVR power library if we're on an AVR
   #include <avr/power.h>
 #endif
-#define FASTLED_INTERRUPT_RETRY_COUNT 1                               // Define the number of retries for FastLED update
+#define FASTLED_ALLOW_INTERRUPTS 0                                    // Keep interrupts off during FastLED.show(). Do not set to 1:
+                                                                      // it risks LEDs lighting in the wrong position, which is
+                                                                      // indistinguishable from a wiring/indexing error. Cost is that
+                                                                      // DCS-BIOS bytes are missed during a show(); DCS-BIOS resends
+                                                                      // every value within ~3.5 s, so the display self-corrects.
 #define DCSBIOS_DISABLE_SERVO                                         // Disable DCS-BIOS servo support (not used)
 
 #include "FastLED.h"

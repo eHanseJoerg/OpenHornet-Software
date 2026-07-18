@@ -46,7 +46,11 @@ class Board {
 
 private:
 
-    int updCountdown;                                                 //DCS Bios cycle countdown before invoking FastLED.show()
+    int updCountdown;                                                 //Loop countdown before invoking FastLED.show() (MODE_MANUAL / MODE_RAINBOW only)
+    unsigned long lastShowMs;                                         //millis() at the end of the last FastLED.show() (MODE_NORMAL only)
+    static const unsigned long SHOW_INTERVAL_NORMAL_MS = 150;         // Min. gap between FastLED.show() calls in MODE_NORMAL. Interrupts are
+                                                                      // off during show(), so DCS-BIOS data can ONLY be received in this gap.
+                                                                      // Larger = fewer missed updates, but more LED latency. See below.
     static const int MAX_CHANNELS = 10;                               // Maximum number of channels
     static const int MODE_NORMAL = 1;                                 // Normal DCS-BIOS controlled mode
     static const int MODE_MANUAL = 2;                                 // Manual mode - control backlts with rotary encoder
@@ -73,6 +77,7 @@ private:
      */
     Board() {
         updCountdown = 0;                                             // Initialize with 0
+        lastShowMs = 0;                                               // Initialize with 0
         channelCount = 0;                                             // Initialize with 0 channels
         thisHue = 0;                                                  // Initialize with 0
         deltaHue = 3;                                                 // Initialize with 3
@@ -162,20 +167,31 @@ public:
 
     /**
      * @brief Update the physical LED state
+     * @details FastLED.show() takes ~51 ms for ~1700 LEDs and runs with interrupts disabled,
+     *          so no DCS-BIOS data can be received while it runs. The gap between two show()
+     *          calls is therefore the only window in which updates arrive. In MODE_NORMAL that
+     *          gap is timed (SHOW_INTERVAL_NORMAL_MS) rather than counted in loop() iterations:
+     *          a loop iteration is only ~0.1 ms, so counting them gave a listening window of a
+     *          few ms against ~51 ms of deafness, and most updates were missed until DCS-BIOS
+     *          re-sent them on its ~3.5 s sweep. MODE_MANUAL / MODE_RAINBOW do not call
+     *          DcsBios::loop(), so they have nothing to listen for and keep the loop countdown.
      * @see This method is called by loop() in 2A13-BACKLIGHT_CONTROLLER.ino
      */
-    void updateLeds() {                                               
-        if (LedUpdateState::getInstance()->getUpdateFlag()) {
-            int countdownLength = (currentMode == MODE_NORMAL) ? 32 : 8; // Slower refresh in normal mode to collect DCS-Bios updates
-            updCountdown = (updCountdown == 0) ? countdownLength : updCountdown;
-            updCountdown--;                                           // Collect loop() calls into one FastLED.show()
-            if (updCountdown == 0) {                                  // Trigger FastLED.show() at end of countdown
-                cli();
-                FastLED.show();                                       
-                LedUpdateState::getInstance()->setUpdateFlag(false);  // Reset update flag
-                sei();
-            }
+    void updateLeds() {
+        if (!LedUpdateState::getInstance()->getUpdateFlag()) return;  // Nothing changed: no update needed
+
+        if (currentMode == MODE_NORMAL) {                             // Leave a fixed listening window for DCS-BIOS data
+            if (millis() - lastShowMs < SHOW_INTERVAL_NORMAL_MS) return;
+        } else {                                                      // No DCS-BIOS data in these modes: batch by loop count as before
+            updCountdown = (updCountdown == 0) ? 8 : updCountdown;
+            if (--updCountdown != 0) return;
         }
+
+        cli();
+        FastLED.show();
+        LedUpdateState::getInstance()->setUpdateFlag(false);          // Reset update flag
+        sei();
+        lastShowMs = millis();                                        // Start the listening window at the END of show()
     }
 
 
