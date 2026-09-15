@@ -77,8 +77,9 @@ public:
                 cli();
                 dirtyMask = dirtyMask | (1 << i);                     // Bitwise OR to set the bit for the channel
                 sei();
-                break;
+                return;
             }
+        setUpdateFlag(true);                                          // If the array is not found, set the update flag for all arrays
         }
     }
 
